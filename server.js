@@ -33,20 +33,6 @@ app.post('/api/chat', async (req, res) => {
         console.error('Error from API:', error.message);
         res.status(500).json({ error: error.message });
     }
-
-    /*
-    try {
-        const response = await axios.post(url, {
-            model: model,
-            messages: messages
-        });
-        console.log('Response from API:', response.data);
-        res.json(response.data);
-    } catch (error) {
-        console.error('Error from API:', error.message);
-        res.status(500).json({ error: error.message });
-    }
-    */
 });
 
 app.listen(port, () => {
