@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LLM Interaction</title>
+    <style>
+        #dropZone {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+        }
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>LLM Interaction</h1>
@@ -23,13 +38,16 @@
     <label for="speak">Speak Output:</label>
     <input type="checkbox" id="speak">
     <label for="image">Drop Image Here:</label>
-    <div id="dropZone" style="border: 2px dashed #ccc; padding: 20px; text-align: center;">Drop image here</div>
+    <div id="dropZone">Drop image here</div>
     <button onclick="sendRequest()">Send</button>
     <h2>Output:</h2>
     <pre id="content"></pre>
     <pre id="output"></pre>
     <h2>Token Usage:</h2>
     <pre id="tokenUsage"></pre>
+    <button id="capture">Capture Image</button>
+    <video id="video" width="300" height="200" autoplay></video>
+    <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
         let base64Image = '';
@@ -50,6 +68,7 @@
             reader.onload = () => {
                 base64Image = reader.result.split(',')[1];
                 console.log('Base64 image:', base64Image);
+                displayThumbnail(reader.result, file.name);
             };
             reader.readAsDataURL(file);
         });
@@ -60,11 +79,8 @@
             const model = document.getElementById('model').value;
             const inputText = document.getElementById('inputText').value;
             const speak = document.getElementById('speak').checked;
-//let modifiedBase64Image = `${base64Image}`; 
-let modifiedBase64Image = base64Image;
+            let modifiedBase64Image = base64Image;
 
-let arr = [];
-arr.push(base64Image);
             const requestData = {
                 ip: ip,
                 port: port,
@@ -89,24 +105,46 @@ arr.push(base64Image);
             });
 
             const data = await response.json();
-            console.log("response: ",data);
+            console.log("response: ", data);
             const content = data.message.content;
-         /*
-            const tokenUsage = data.usage;
 
-            totalTokens += tokenUsage.total_tokens;
-*/
             document.getElementById('content').textContent = content;
             document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-           
-  //          document.getElementById('tokenUsage').textContent = `Prompt Tokens: ${tokenUsage.prompt_tokens}\nCompletion Tokens: ${tokenUsage.completion_tokens}\nTotal Tokens: ${tokenUsage.total_tokens}\nTotal Tokens This Session: ${totalTokens}`;
 
             if (speak) {
                 const utterance = new SpeechSynthesisUtterance(content);
                 speechSynthesis.speak(utterance);
             }
         }
+
+        function displayThumbnail(src, name) {
+            const thumbnails = document.getElementById('thumbnails');
+            const img = document.createElement('img');
+            img.src = src;
+            img.classList.add('thumbnail');
+            thumbnails.appendChild(img);
+            const imgName = document.createElement('p');
+            imgName.textContent = name;
+            thumbnails.appendChild(imgName);
+        }
+
+        // Camera capture functionality
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                console.error('Error accessing camera: ', err);
+            });
+
+        document.getElementById('capture').addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            base64Image = dataUrl.split(',')[1];
+            displayThumbnail(dataUrl, 'Captured Image');
+        });
     </script>
 </body>
 </html>
-
