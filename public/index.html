@@ -13,15 +13,17 @@
     <input type="text" id="port" value="11434">
     <label for="model">Model Type:</label>
     <select id="model">
-        <option value="openchat" selected>openchat</option>
+        <option value="openchat">openchat</option>
         <option value="deepseek-r1">deepseek-r1</option>
-        <option value="llama3.2">llama3.2</option>
+        <option value="llama3.2-vision" selected>llama3.2-vision</option>
         <!-- Add more model options as needed -->
     </select>
     <label for="inputText">Input Text:</label>
-    <textarea id="inputText" rows="4" cols="50">You are a large language model named OpenChat. Write a poem to describe yourself.</textarea>
+    <textarea id="inputText" rows="4" cols="50">what does the image show?</textarea>
     <label for="speak">Speak Output:</label>
     <input type="checkbox" id="speak">
+    <label for="image">Drop Image Here:</label>
+    <div id="dropZone" style="border: 2px dashed #ccc; padding: 20px; text-align: center;">Drop image here</div>
     <button onclick="sendRequest()">Send</button>
     <h2>Output:</h2>
     <pre id="content"></pre>
@@ -30,28 +32,69 @@
     <pre id="tokenUsage"></pre>
 
     <script>
+        let base64Image = '';
+        let totalTokens = 0;
+
+        document.getElementById('dropZone').addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            console.log('Drag over event detected');
+        });
+
+        document.getElementById('dropZone').addEventListener('drop', (event) => {
+            event.preventDefault();
+            console.log('Drop event detected');
+            const file = event.dataTransfer.files[0];
+            console.log('File dropped:', file);
+            const reader = new FileReader();
+            reader.onload = () => {
+                base64Image = reader.result.split(',')[1];
+                console.log('Base64 image:', base64Image);
+            };
+            reader.readAsDataURL(file);
+        });
+
         async function sendRequest() {
             const ip = document.getElementById('ip').value;
             const port = document.getElementById('port').value;
             const model = document.getElementById('model').value;
             const inputText = document.getElementById('inputText').value;
             const speak = document.getElementById('speak').checked;
+let pic = `[${base64Image}]`;
+
+let modifiedBase64Image = base64Image;
+            const requestData = {
+                ip: ip,
+                port: port,
+                model: model,
+                messages: [
+                    {
+                        role: "user",
+                        content: inputText,
+                        images: modifiedBase64Image
+                    }
+                ]
+            };
+
+            console.log('Sending request with the following data:', requestData);
 
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ ip, port, model, inputText })
+                body: JSON.stringify(requestData)
             });
 
             const data = await response.json();
             const content = data.choices[0].message.content;
             const tokenUsage = data.usage;
 
+            totalTokens += tokenUsage.total_tokens;
+
             document.getElementById('content').textContent = content;
             document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-            document.getElementById('tokenUsage').textContent = `Prompt Tokens: ${tokenUsage.prompt_tokens}\nCompletion Tokens: ${tokenUsage.completion_tokens}\nTotal Tokens: ${tokenUsage.total_tokens}`;
+            document.getElementById('tokenUsage').textContent = `Prompt Tokens: ${tokenUsage.prompt_tokens}\nCompletion Tokens: ${tokenUsage.completion_tokens}\nTotal Tokens: ${tokenUsage.total_tokens}\nTotal Tokens This Session: ${totalTokens}`;
 
             if (speak) {
                 const utterance = new SpeechSynthesisUtterance(content);
@@ -61,3 +104,4 @@
     </script>
 </body>
 </html>
+
