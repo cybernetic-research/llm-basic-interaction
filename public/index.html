@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Interaction</title>
+</head>
+<body>
+    <h1>LLM Interaction</h1>
+    <label for="ip">IP Address:</label>
+    <input type="text" id="ip" value="127.0.0.1">
+    <label for="port">Port:</label>
+    <input type="text" id="port" value="11434">
+    <label for="model">Model Type:</label>
+    <select id="model">
+        <option value="openchat" selected>openchat</option>
+        <option value="deepseek-r1">deepseek-r1</option>
+        <option value="llama3.2">llama3.2</option>
+        <!-- Add more model options as needed -->
+    </select>
+    <label for="inputText">Input Text:</label>
+    <textarea id="inputText" rows="4" cols="50">You are a large language model named OpenChat. Write a poem to describe yourself.</textarea>
+    <label for="speak">Speak Output:</label>
+    <input type="checkbox" id="speak">
+    <button onclick="sendRequest()">Send</button>
+    <h2>Output:</h2>
+    <pre id="content"></pre>
+    <pre id="output"></pre>
+    <h2>Token Usage:</h2>
+    <pre id="tokenUsage"></pre>
+
+    <script>
+        async function sendRequest() {
+            const ip = document.getElementById('ip').value;
+            const port = document.getElementById('port').value;
+            const model = document.getElementById('model').value;
+            const inputText = document.getElementById('inputText').value;
+            const speak = document.getElementById('speak').checked;
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ip, port, model, inputText })
+            });
+
+            const data = await response.json();
+            const content = data.choices[0].message.content;
+            const tokenUsage = data.usage;
+
+            document.getElementById('content').textContent = content;
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('tokenUsage').textContent = `Prompt Tokens: ${tokenUsage.prompt_tokens}\nCompletion Tokens: ${tokenUsage.completion_tokens}\nTotal Tokens: ${tokenUsage.total_tokens}`;
+
+            if (speak) {
+                const utterance = new SpeechSynthesisUtterance(content);
+                speechSynthesis.speak(utterance);
+            }
+        }
+    </script>
+</body>
+</html>
