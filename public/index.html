@@ -60,9 +60,11 @@
             const model = document.getElementById('model').value;
             const inputText = document.getElementById('inputText').value;
             const speak = document.getElementById('speak').checked;
-let pic = `[${base64Image}]`;
-
+//let modifiedBase64Image = `${base64Image}`; 
 let modifiedBase64Image = base64Image;
+
+let arr = [];
+arr.push(base64Image);
             const requestData = {
                 ip: ip,
                 port: port,
@@ -71,7 +73,7 @@ let modifiedBase64Image = base64Image;
                     {
                         role: "user",
                         content: inputText,
-                        images: modifiedBase64Image
+                        images: [modifiedBase64Image]
                     }
                 ]
             };
@@ -87,14 +89,17 @@ let modifiedBase64Image = base64Image;
             });
 
             const data = await response.json();
-            const content = data.choices[0].message.content;
+            console.log("response: ",data);
+            const content = data.message.content;
+         /*
             const tokenUsage = data.usage;
 
             totalTokens += tokenUsage.total_tokens;
-
+*/
             document.getElementById('content').textContent = content;
             document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-            document.getElementById('tokenUsage').textContent = `Prompt Tokens: ${tokenUsage.prompt_tokens}\nCompletion Tokens: ${tokenUsage.completion_tokens}\nTotal Tokens: ${tokenUsage.total_tokens}\nTotal Tokens This Session: ${totalTokens}`;
+           
+  //          document.getElementById('tokenUsage').textContent = `Prompt Tokens: ${tokenUsage.prompt_tokens}\nCompletion Tokens: ${tokenUsage.completion_tokens}\nTotal Tokens: ${tokenUsage.total_tokens}\nTotal Tokens This Session: ${totalTokens}`;
 
             if (speak) {
                 const utterance = new SpeechSynthesisUtterance(content);

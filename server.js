@@ -1,6 +1,7 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
+import express from 'express';
+import bodyParser from 'body-parser';
+import axios from 'axios';
+import ollama from 'ollama';
 
 const app = express();
 const port = 3000;
@@ -14,7 +15,26 @@ app.post('/api/chat', async (req, res) => {
     const url = `http://${ip}:${port}/v1/chat/completions`;
     console.log('Received request:', req.body);
 
-    console.log('Received image:', messages.images);
+    let img = messages[0].images;
+    console.log('Received image:', img);
+
+    try {
+        const response = await ollama.chat({
+            model: model,
+            messages: [{
+                role: 'user',
+                content: messages[0].content,
+                images: img
+            }]
+        });
+        console.log('response:',response);
+        res.json(response);
+    } catch (error) {
+        console.error('Error from API:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+
+    /*
     try {
         const response = await axios.post(url, {
             model: model,
@@ -26,6 +46,7 @@ app.post('/api/chat', async (req, res) => {
         console.error('Error from API:', error.message);
         res.status(500).json({ error: error.message });
     }
+    */
 });
 
 app.listen(port, () => {
